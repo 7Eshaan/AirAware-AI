@@ -337,6 +337,76 @@ export function useAuth() {
     }
   }, [configured]);
 
+  const signInWithGoogle = useCallback(async () => {
+    setAuthError(null);
+    setAuthMessage(null);
+
+    if (!configured) {
+      setIsLoading(true);
+      await new Promise((r) => setTimeout(r, 400));
+      const mockId = `google_user_${Date.now()}`;
+      const mockUser: User = {
+        id: mockId,
+        app_metadata: { provider: 'google' },
+        user_metadata: { display_name: 'Google User', full_name: 'Google User' },
+        aud: 'authenticated',
+        confirmation_sent_at: '',
+        recovery_sent_at: '',
+        email_change_sent_at: '',
+        new_email: '',
+        invited_at: '',
+        action_link: '',
+        email: 'user@gmail.com',
+        phone: '',
+        created_at: new Date().toISOString(),
+        confirmed_at: new Date().toISOString(),
+        email_confirmed_at: new Date().toISOString(),
+        phone_confirmed_at: '',
+        last_sign_in_at: new Date().toISOString(),
+        role: 'authenticated',
+        updated_at: new Date().toISOString(),
+      };
+      const mockSession: Session = {
+        access_token: `mock_jwt_${mockId}`,
+        refresh_token: `mock_refresh_${mockId}`,
+        expires_in: 3600,
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+        token_type: 'bearer',
+        user: mockUser,
+      };
+      saveLocalSession({ user: mockUser, session: mockSession });
+      setUser(mockUser);
+      setSession(mockSession);
+      setIsLoading(false);
+      setAuthMessage('Signed in with Google (Local Dev Mode)!');
+      return { data: { user: mockUser, session: mockSession }, error: null };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        setAuthError(error.message);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (err: any) {
+      const message = err?.message || 'Failed to initialize Google authentication';
+      setAuthError(message);
+      return { data: null, error: err };
+    }
+  }, [configured]);
+
   const clearError = useCallback(() => {
     setAuthError(null);
     setAuthMessage(null);
@@ -352,6 +422,7 @@ export function useAuth() {
     isConfigured: configured,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     clearError,
   };
