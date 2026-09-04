@@ -7,6 +7,7 @@ import { Atmosphere } from './Atmosphere';
 import { LocationMarker } from './LocationMarker';
 import { GlobeControls } from './GlobeControls';
 import { SpaceBackground } from './SpaceBackground';
+import { GlobeLoader } from './GlobeLoader';
 import { flyCameraToLocation } from '../../utils/cameraFlight';
 import gsap from 'gsap';
 
@@ -208,6 +209,9 @@ export const GlobeScene = forwardRef<GlobeSceneHandle, GlobeSceneProps>(
             earthGroupRef={earthGroupRef}
           />
         </Canvas>
+
+        {/* Mesmerising Celestial Planetary Loading Overlay */}
+        <GlobeLoader />
       </div>
     );
   }
