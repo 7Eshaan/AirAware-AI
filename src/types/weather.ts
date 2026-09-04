@@ -40,5 +40,7 @@ export interface WeatherData {
   lastUpdated: string;
   dailyForecast?: DailyForecastItem[];
   hourly?: HourlyForecastItem[];
+  latitude?: number;
+  longitude?: number;
 }
 

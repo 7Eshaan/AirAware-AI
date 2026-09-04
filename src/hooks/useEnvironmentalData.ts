@@ -7,10 +7,10 @@ import { SevenDayTrendsData } from '../types/trends';
 import { UserHealthProfile } from '../types/profile';
 
 import { fetchWeather } from '../services/weatherService';
-import { fetchAirQuality } from '../services/airQualityService';
+import { fetchWAQIAirQuality } from '../services/waqiService';
 import { fetchHistoricalData } from '../services/historicalService';
 import { calculateRiskAssessment } from '../services/riskEngine';
-import { generateAIAdvisory } from '../services/aiService';
+import { generateHealthAdvisory } from '../services/advisoryService';
 
 export function useEnvironmentalData() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -30,19 +30,21 @@ export function useEnvironmentalData() {
       setIsLoading(true);
 
       try {
-        // Parallel data fetch as specified in prompt Phase 19
+        // Parallel telemetry ingestion: Open-Meteo Weather + WAQI AQI + Historical trends
         const [weatherData, aqiData, historicalData] = await Promise.all([
           fetchWeather(latitude, longitude),
-          fetchAirQuality(latitude, longitude),
+          fetchWAQIAirQuality(latitude, longitude),
           fetchHistoricalData(latitude, longitude, locationName, profile),
         ]);
 
         // Deterministic Risk Assessment
         const calculatedRisk = calculateRiskAssessment(weatherData, aqiData, profile);
 
-        // AI Advisory Generation
-        const generatedAdvisory = await generateAIAdvisory(
+        // Secure AI Health Advisory via Supabase Edge Function / Gemini
+        const generatedAdvisory = await generateHealthAdvisory(
           locationName,
+          latitude,
+          longitude,
           weatherData,
           aqiData,
           profile,
@@ -69,8 +71,10 @@ export function useEnvironmentalData() {
       if (!weather || !aqi) return;
 
       const updatedRisk = calculateRiskAssessment(weather, aqi, profile);
-      const updatedAdvisory = await generateAIAdvisory(
+      const updatedAdvisory = await generateHealthAdvisory(
         locationName,
+        weather.latitude ?? 0,
+        weather.longitude ?? 0,
         weather,
         aqi,
         profile,

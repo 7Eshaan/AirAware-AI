@@ -135,6 +135,8 @@ export async function fetchWeather(
         lastUpdated: new Date().toISOString(),
         dailyForecast,
         hourly: hourlyForecast,
+        latitude,
+        longitude,
       };
     }
   } catch (e) {
