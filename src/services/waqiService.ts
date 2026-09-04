@@ -163,6 +163,7 @@ export async function fetchWAQIAirQuality(
   } catch (e) {
     console.warn('WAQI API live fetch failed, using Open-Meteo fallback', e);
   }
+}
 
   // Graceful fallback to Open-Meteo Air Quality API
   return fetchOpenMeteoAirQuality(latitude, longitude);
