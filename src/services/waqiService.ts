@@ -2,7 +2,21 @@ import { AQIData } from '../types/aqi';
 import { getAQIInfo } from '../utils/aqiUtils';
 import { fetchAirQuality as fetchOpenMeteoAirQuality } from './airQualityService';
 
-const WAQI_TOKEN = import.meta.env.VITE_WAQI_API_TOKEN || 'demo';
+const WAQI_TOKEN = import.meta.env.VITE_WAQI_API_TOKEN || '';
+
+function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 function normalizeDominantPol(code?: string): string {
   if (!code) return 'PM2.5';
@@ -17,25 +31,47 @@ function normalizeDominantPol(code?: string): string {
 }
 
 /**
- * Fetches real ground-station Air Quality data from the World Air Quality Index (WAQI) API:
- * https://api.waqi.info/feed/geo:{lat};{lon}/?token={token}
+ * Fetches real Air Quality telemetry.
  * 
- * Falls back to Open-Meteo Air Quality API if the WAQI station is unavailable or token limits are reached.
+ * - If a custom WAQI token is set (not 'demo'), queries WAQI and verifies
+ *   the station is nearby (< 150 km) to avoid misleading redirects.
+ * - Otherwise, automatically uses Open-Meteo Air Quality API which provides
+ *   100% free, authentic, coordinate-specific atmospheric modeling worldwide.
  */
 export async function fetchWAQIAirQuality(
   latitude: number,
   longitude: number
 ): Promise<AQIData> {
-  try {
-    const url = `https://api.waqi.info/feed/geo:${latitude};${longitude}/?token=${WAQI_TOKEN}`;
-    const res = await fetch(url);
+  const hasValidCustomWaqiToken =
+    Boolean(WAQI_TOKEN) &&
+    WAQI_TOKEN !== 'demo' &&
+    !WAQI_TOKEN.includes('placeholder') &&
+    WAQI_TOKEN.length > 10;
 
-    if (res.ok) {
-      const json = await res.json();
-      if (json.status === 'ok' && json.data && typeof json.data.aqi === 'number') {
-        const d = json.data;
-        const aqiVal = Math.round(d.aqi);
-        const iaqi = d.iaqi || {};
+  if (hasValidCustomWaqiToken) {
+    try {
+      const url = `https://api.waqi.info/feed/geo:${latitude};${longitude}/?token=${WAQI_TOKEN}`;
+      const res = await fetch(url);
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.status === 'ok' && json.data && typeof json.data.aqi === 'number') {
+          const d = json.data;
+
+          // Verify station is actually near the requested coordinates
+          let isNearby = true;
+          if (Array.isArray(d.city?.geo) && d.city.geo.length === 2) {
+            const [stLat, stLon] = d.city.geo;
+            const dist = calculateDistanceKm(latitude, longitude, stLat, stLon);
+            if (dist > 150) {
+              isNearby = false;
+              console.warn(`WAQI station ${d.city.name} is ${Math.round(dist)}km away. Falling back to Open-Meteo.`);
+            }
+          }
+
+          if (isNearby) {
+            const aqiVal = Math.round(d.aqi);
+            const iaqi = d.iaqi || {};
 
         const pm25Val = Math.round(iaqi.pm25?.v ?? (aqiVal * 0.45));
         const pm10Val = Math.round(iaqi.pm10?.v ?? (aqiVal * 0.72));
@@ -120,7 +156,8 @@ export async function fetchWAQIAirQuality(
           europeanCategory: aqiInfo.category,
           pollutants,
           lastUpdated: d.time?.s ? new Date(d.time.s).toISOString() : new Date().toISOString(),
-        };
+          };
+        }
       }
     }
   } catch (e) {
