@@ -95,6 +95,26 @@ export function useAuth() {
       }
     }
 
+    // Check if redirected back with error parameter from OAuth
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      const params = new URLSearchParams(
+        hash.startsWith('#') ? hash.substring(1) : search.startsWith('?') ? search.substring(1) : ''
+      );
+      const errorDesc = params.get('error_description');
+      const errorCode = params.get('error_code') || params.get('error');
+      if (errorDesc || errorCode) {
+        const rawMsg = errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, ' ')) : 'Authentication failed';
+        if (rawMsg.toLowerCase().includes('provider') || rawMsg.toLowerCase().includes('not enabled')) {
+          setAuthError('Google provider is not enabled in your Supabase project. Enable it in Supabase Dashboard -> Authentication -> Providers -> Google.');
+        } else {
+          setAuthError(rawMsg);
+        }
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+
     initializeSession();
 
     const {
@@ -366,6 +386,10 @@ export function useAuth() {
           setAuthError(error.message);
         }
         return { data: null, error };
+      }
+
+      if (data?.url && typeof window !== 'undefined') {
+        window.location.assign(data.url);
       }
 
       return { data, error: null };
