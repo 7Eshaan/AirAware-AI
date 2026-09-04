@@ -1,17 +1,18 @@
 -- ==============================================================================
--- AirAware AI: Supabase Database Schema & Row Level Security Migration
+-- AirAware AI: Unified Profiles & Authentication Migration (Google + Email Auth)
 -- Migration: 001_initial_schema.sql
 -- ==============================================================================
 
--- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
--- ------------------------------------------------------------------------------
--- 1. PROFILES TABLE
--- ------------------------------------------------------------------------------
+-- 1. Profiles Table
 create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
+  email text,
   display_name text,
+  full_name text,
+  avatar_url text,
+  auth_provider text not null default 'email',
   age_group text not null default 'Adult' check (age_group in ('Child', 'Teen', 'Adult', 'Senior Citizen')),
   health_conditions jsonb not null default '["No Known Condition"]'::jsonb,
   occupation text not null default 'Indoor Worker',
@@ -20,28 +21,25 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default timezone('utc'::text, now())
 );
 
-comment on table public.profiles is 'Personalized health and vulnerability profiles for registered users.';
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists auth_provider text not null default 'email';
 
--- Enable RLS
 alter table public.profiles enable row level security;
 
--- Profiles RLS Policies
+drop policy if exists "Users can select their own profile" on public.profiles;
 create policy "Users can select their own profile"
-  on public.profiles
-  for select
-  using (auth.uid() = id);
+  on public.profiles for select using (auth.uid() = id);
 
+drop policy if exists "Users can insert their own profile" on public.profiles;
 create policy "Users can insert their own profile"
-  on public.profiles
-  for insert
-  with check (auth.uid() = id);
+  on public.profiles for insert with check (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
-  on public.profiles
-  for update
-  using (auth.uid() = id);
+  on public.profiles for update using (auth.uid() = id);
 
--- Auto-update updated_at timestamp
 create or replace function public.handle_updated_at()
 returns trigger as $$
 begin
@@ -53,34 +51,64 @@ $$ language plpgsql security definer;
 drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at
   before update on public.profiles
-  for each row
-  execute function public.handle_updated_at();
+  for each row execute function public.handle_updated_at();
 
--- Auto-create profile row on user signup
+-- Auto-provision profile row upon user registration (supports Google OAuth & Email)
 create or replace function public.handle_new_user()
 returns trigger as $$
+declare
+  provider_name text;
+  user_name text;
+  avatar text;
 begin
-  insert into public.profiles (id, display_name)
+  provider_name := coalesce(new.raw_app_meta_data->>'provider', 'email');
+
+  user_name := coalesce(
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'name',
+    new.raw_user_meta_data->>'display_name',
+    split_part(new.email, '@', 1)
+  );
+
+  avatar := coalesce(
+    new.raw_user_meta_data->>'avatar_url',
+    new.raw_user_meta_data->>'picture'
+  );
+
+  insert into public.profiles (
+    id,
+    email,
+    display_name,
+    full_name,
+    avatar_url,
+    auth_provider
+  )
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1))
+    new.email,
+    user_name,
+    user_name,
+    avatar,
+    provider_name
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set
+    email = coalesce(excluded.email, public.profiles.email),
+    avatar_url = coalesce(excluded.avatar_url, public.profiles.avatar_url),
+    full_name = coalesce(excluded.full_name, public.profiles.full_name),
+    auth_provider = excluded.auth_provider,
+    updated_at = timezone('utc'::text, now());
+
   return new;
 end;
 $$ language plpgsql security definer;
 
--- Trigger for auth.users
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row
-  execute function public.handle_new_user();
+  for each row execute function public.handle_new_user();
 
 
--- ------------------------------------------------------------------------------
--- 2. ADVISORY HISTORY TABLE
--- ------------------------------------------------------------------------------
+-- 2. Advisory History Table
 create table if not exists public.advisory_history (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users on delete cascade not null,
@@ -108,30 +136,22 @@ create table if not exists public.advisory_history (
   created_at timestamptz not null default timezone('utc'::text, now())
 );
 
-comment on table public.advisory_history is 'Historical environmental telemetry snapshots and AI clinical health advisories per user.';
-
--- Indexes for performance
 create index if not exists idx_advisory_history_user_created 
   on public.advisory_history (user_id, created_at desc);
 
 create index if not exists idx_advisory_history_location 
   on public.advisory_history (location_name);
 
--- Enable RLS
 alter table public.advisory_history enable row level security;
 
--- Advisory History RLS Policies
+drop policy if exists "Users can select their own advisory history" on public.advisory_history;
 create policy "Users can select their own advisory history"
-  on public.advisory_history
-  for select
-  using (auth.uid() = user_id);
+  on public.advisory_history for select using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own advisory history" on public.advisory_history;
 create policy "Users can insert their own advisory history"
-  on public.advisory_history
-  for insert
-  with check (auth.uid() = user_id);
+  on public.advisory_history for insert with check (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own advisory history" on public.advisory_history;
 create policy "Users can delete their own advisory history"
-  on public.advisory_history
-  for delete
-  using (auth.uid() = user_id);
+  on public.advisory_history for delete using (auth.uid() = user_id);
