@@ -342,44 +342,9 @@ export function useAuth() {
     setAuthMessage(null);
 
     if (!configured) {
-      setIsLoading(true);
-      await new Promise((r) => setTimeout(r, 400));
-      const mockId = `google_user_${Date.now()}`;
-      const mockUser: User = {
-        id: mockId,
-        app_metadata: { provider: 'google' },
-        user_metadata: { display_name: 'Google User', full_name: 'Google User' },
-        aud: 'authenticated',
-        confirmation_sent_at: '',
-        recovery_sent_at: '',
-        email_change_sent_at: '',
-        new_email: '',
-        invited_at: '',
-        action_link: '',
-        email: 'user@gmail.com',
-        phone: '',
-        created_at: new Date().toISOString(),
-        confirmed_at: new Date().toISOString(),
-        email_confirmed_at: new Date().toISOString(),
-        phone_confirmed_at: '',
-        last_sign_in_at: new Date().toISOString(),
-        role: 'authenticated',
-        updated_at: new Date().toISOString(),
-      };
-      const mockSession: Session = {
-        access_token: `mock_jwt_${mockId}`,
-        refresh_token: `mock_refresh_${mockId}`,
-        expires_in: 3600,
-        expires_at: Math.floor(Date.now() / 1000) + 3600,
-        token_type: 'bearer',
-        user: mockUser,
-      };
-      saveLocalSession({ user: mockUser, session: mockSession });
-      setUser(mockUser);
-      setSession(mockSession);
-      setIsLoading(false);
-      setAuthMessage('Signed in with Google (Local Dev Mode)!');
-      return { data: { user: mockUser, session: mockSession }, error: null };
+      const err = 'Supabase credentials are not detected in this environment. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your Vercel Project Settings (or .env) and refresh the page.';
+      setAuthError(err);
+      return { data: null, error: new Error(err) };
     }
 
     try {
@@ -395,7 +360,11 @@ export function useAuth() {
       });
 
       if (error) {
-        setAuthError(error.message);
+        if (error.message.toLowerCase().includes('provider') || error.message.toLowerCase().includes('not enabled')) {
+          setAuthError('Google provider is not enabled yet in your Supabase project. Go to Supabase Dashboard -> Authentication -> Providers -> Google to toggle it ON.');
+        } else {
+          setAuthError(error.message);
+        }
         return { data: null, error };
       }
 
