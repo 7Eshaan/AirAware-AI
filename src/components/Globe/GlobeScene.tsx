@@ -1,14 +1,14 @@
-import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import * as THREE from 'three';
-import { Canvas, useThree } from '@react-three/fiber';
-import { Stars } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Earth } from './Earth';
-import { Clouds } from './Clouds';
 import { Atmosphere } from './Atmosphere';
 import { LocationMarker } from './LocationMarker';
 import { GlobeControls } from './GlobeControls';
+import { SpaceBackground } from './SpaceBackground';
 import { flyCameraToLocation } from '../../utils/cameraFlight';
+import gsap from 'gsap';
 
 export interface GlobeSceneHandle {
   flyToLocation: (
@@ -17,6 +17,7 @@ export interface GlobeSceneHandle {
     onMarkerReveal?: () => void,
     onComplete?: () => void
   ) => void;
+  resetToOrbit: () => void;
 }
 
 interface GlobeSceneProps {
@@ -56,21 +57,12 @@ const SceneContent: React.FC<SceneContentProps> = ({
       <directionalLight position={[-2, 1, 4]} intensity={1.0} />
       <directionalLight position={[-5, -2, -4]} intensity={0.35} />
 
-      {/* Deep Space Background Starfield */}
-      <Stars
-        radius={300}
-        depth={60}
-        count={2500}
-        factor={6}
-        saturation={0}
-        fade
-        speed={0.8}
-      />
+      {/* Realistic Deep Space Environment */}
+      <SpaceBackground />
 
       {/* Rotating Earth Group */}
       <group ref={earthGroupRef}>
         <Earth />
-        <Clouds isFlying={isFlying} />
         <Atmosphere />
 
         {/* 3D Location Marker on Earth's surface */}
@@ -89,6 +81,7 @@ const SceneContent: React.FC<SceneContentProps> = ({
       <GlobeControls
         earthGroupRef={earthGroupRef}
         isFlying={isFlying}
+        hasSelectedLocation={Boolean(selectedLocation)}
         onControlsReady={onControlsReady}
       />
     </>
@@ -101,15 +94,21 @@ export const GlobeScene = forwardRef<GlobeSceneHandle, GlobeSceneProps>(
     const cameraRef = useRef<THREE.Camera | null>(null);
     const earthGroupRef = useRef<THREE.Group | null>(null);
 
-    const handleControlsReady = useCallback((controls: OrbitControlsImpl) => {
-      controlsRef.current = controls;
-    }, []);
+    const pendingFlightRef = useRef<{
+      latitude: number;
+      longitude: number;
+      onReveal?: () => void;
+      onComplete?: () => void;
+    } | null>(null);
 
-    // Expose flyToLocation method to parent via ref
-    useImperativeHandle(ref, () => ({
-      flyToLocation: (latitude, longitude, onReveal, onComplete) => {
-        if (!cameraRef.current || !controlsRef.current) return;
+    const executeFlight = useCallback(
+      (latitude: number, longitude: number, onReveal?: () => void, onComplete?: () => void) => {
+        if (!cameraRef.current || !controlsRef.current) {
+          pendingFlightRef.current = { latitude, longitude, onReveal, onComplete };
+          return;
+        }
 
+        pendingFlightRef.current = null;
         flyCameraToLocation({
           camera: cameraRef.current,
           controls: controlsRef.current,
@@ -127,10 +126,62 @@ export const GlobeScene = forwardRef<GlobeSceneHandle, GlobeSceneProps>(
           },
         });
       },
+      [onMarkerReveal, onFlightComplete]
+    );
+
+    const checkPendingFlight = useCallback(() => {
+      if (cameraRef.current && controlsRef.current && pendingFlightRef.current) {
+        const { latitude, longitude, onReveal, onComplete } = pendingFlightRef.current;
+        executeFlight(latitude, longitude, onReveal, onComplete);
+      }
+    }, [executeFlight]);
+
+    const handleControlsReady = useCallback(
+      (controls: OrbitControlsImpl) => {
+        controlsRef.current = controls;
+        checkPendingFlight();
+      },
+      [checkPendingFlight]
+    );
+
+    // Expose flyToLocation & resetToOrbit methods to parent via ref
+    useImperativeHandle(ref, () => ({
+      flyToLocation: (latitude, longitude, onReveal, onComplete) => {
+        executeFlight(latitude, longitude, onReveal, onComplete);
+      },
+      resetToOrbit: () => {
+        if (!cameraRef.current || !controlsRef.current) return;
+        gsap.killTweensOf(cameraRef.current.position);
+        gsap.killTweensOf(controlsRef.current.target);
+
+        gsap.to(controlsRef.current.target, {
+          x: 0,
+          y: 0,
+          z: 0,
+          duration: 1.0,
+          ease: 'power2.out',
+          onUpdate: () => controlsRef.current?.update(),
+        });
+
+        gsap.to(cameraRef.current.position, {
+          x: 0,
+          y: 0,
+          z: 4.5,
+          duration: 1.6,
+          ease: 'power3.inOut',
+          onUpdate: () => controlsRef.current?.update(),
+        });
+      },
     }));
 
     return (
-      <div className="absolute inset-0 w-full h-full bg-[#030712] overflow-hidden">
+      <div
+        className="absolute inset-0 w-full h-full bg-black overflow-hidden z-0"
+        style={{
+          background: '#000000',
+          isolation: 'isolate',
+        }}
+      >
         <Canvas
           camera={{
             position: [0, 0, 4.5],
@@ -146,6 +197,7 @@ export const GlobeScene = forwardRef<GlobeSceneHandle, GlobeSceneProps>(
           }}
           onCreated={({ camera }) => {
             cameraRef.current = camera;
+            checkPendingFlight();
           }}
         >
           <SceneContent

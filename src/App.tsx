@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { GlobeScene, GlobeSceneHandle } from './components/Globe/GlobeScene';
 import { LocationSearch } from './components/Search/LocationSearch';
 import { ProfileButton } from './components/profile/ProfileButton';
@@ -12,8 +12,8 @@ import { HistoryPanel } from './components/Panels/HistoryPanel';
 import { useLocationSearch } from './hooks/useLocationSearch';
 import { useEnvironmentalData } from './hooks/useEnvironmentalData';
 import { useUserProfile } from './hooks/useUserProfile';
-import { LocationResult } from './services/geocodingService';
-import { Compass, X, RotateCcw } from 'lucide-react';
+import { LocationResult, getRandomLocation } from './services/geocodingService';
+import { Compass, RotateCcw, Shuffle } from 'lucide-react';
 
 export function App() {
   const globeRef = useRef<GlobeSceneHandle>(null);
@@ -51,7 +51,7 @@ export function App() {
     recalculateForProfile,
   } = useEnvironmentalData();
 
-  // Handle location selection from Search bar
+  // Handle location selection from Search bar or random picker
   const handleSelectLocation = useCallback(
     (loc: LocationResult) => {
       startFlight(loc);
@@ -71,6 +71,30 @@ export function App() {
     },
     [startFlight, fetchEnvironmentForLocation, profile, triggerMarkerReveal, finishFlight]
   );
+
+  // Pick a fresh random location
+  const handleSelectRandomLocation = useCallback(() => {
+    const randomLoc = getRandomLocation(selectedLocation?.name);
+    handleSelectLocation(randomLoc);
+  }, [handleSelectLocation, selectedLocation]);
+
+  // Return to global planetary view and reset camera to space orbit
+  const handleExitDestination = useCallback(() => {
+    resetSelection();
+    if (globeRef.current) {
+      globeRef.current.resetToOrbit();
+    }
+  }, [resetSelection]);
+
+  // Automatically select and fly to a random global city on initial UI open
+  const initialMountRef = useRef(false);
+  useEffect(() => {
+    if (!initialMountRef.current) {
+      initialMountRef.current = true;
+      const initialRandomCity = getRandomLocation();
+      handleSelectLocation(initialRandomCity);
+    }
+  }, [handleSelectLocation]);
 
   // When user updates their health profile from modal
   const handleUpdateProfile = useCallback(
@@ -99,7 +123,7 @@ export function App() {
             : null
         }
         isFlying={isFlying}
-        showMarker={showMarker}
+        showMarker={showMarker && !isProfileModalOpen}
         onMarkerReveal={triggerMarkerReveal}
         onFlightComplete={finishFlight}
       />
@@ -107,6 +131,8 @@ export function App() {
       {/* 2. Top Bar Controls: Location Search near top-center */}
       <LocationSearch
         onSelectLocation={handleSelectLocation}
+        selectedLocationName={selectedLocation?.name}
+        onRandomLocation={handleSelectRandomLocation}
         isFlying={isFlying}
       />
 
@@ -116,54 +142,60 @@ export function App() {
         onClick={() => setIsProfileModalOpen(true)}
       />
 
-      {/* Initial Space Ambient Hint (visible only when no location is selected yet) */}
+      {/* Initial Space Ambient Hint (visible only when no location is selected) */}
       {!selectedLocation && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none text-center animate-in fade-in duration-1000">
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20 text-center animate-in fade-in duration-1000 flex flex-col items-center gap-2.5 pointer-events-auto">
           <div className="px-4 py-2 rounded-full bg-slate-950/60 border border-white/10 backdrop-blur-md text-xs text-slate-300 flex items-center gap-2 shadow-lg">
             <Compass className="h-3.5 w-3.5 text-emerald-400 animate-spin" style={{ animationDuration: '8s' }} />
             <span>Drag to rotate planet • Search any city to explore environmental intelligence</span>
           </div>
+          <button
+            onClick={handleSelectRandomLocation}
+            disabled={isFlying}
+            className="px-4 py-1.5 rounded-full bg-emerald-950/70 hover:bg-emerald-900/90 border border-emerald-500/40 text-xs font-medium text-emerald-300 hover:text-white flex items-center gap-2 shadow-lg backdrop-blur-md transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            <span>Explore a Random Location</span>
+          </button>
         </div>
       )}
 
-      {/* Reset view button if location is selected */}
+      {/* Action buttons if location is selected */}
       {selectedLocation && showPanels && (
-        <button
-          onClick={resetSelection}
-          className="fixed bottom-5 left-5 z-30 px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold backdrop-blur-md transition-all shadow-xl flex items-center gap-2 cursor-pointer pointer-events-auto"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          <span>Exit Destination View</span>
-        </button>
+        <div className="fixed bottom-5 left-5 z-30 flex items-center gap-2 pointer-events-auto">
+          <button
+            onClick={handleExitDestination}
+            className="px-3.5 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold backdrop-blur-md transition-all shadow-xl flex items-center gap-2 cursor-pointer"
+            title="Return to planetary view"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Exit Destination View</span>
+          </button>
+          <button
+            onClick={handleSelectRandomLocation}
+            disabled={isFlying}
+            className="px-3.5 py-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-semibold backdrop-blur-md transition-all shadow-xl flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            title="Explore another random city"
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            <span>Random City</span>
+          </button>
+        </div>
       )}
 
-      {/* 4. Floating Glassmorphism Data Panels (Rendered once camera flight settles) */}
+      {/* 4. Floating Glassmorphism Side HUD Wings (Rendered once camera flight settles) */}
       {showPanels && (
         <>
-          <div className="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-4 sm:p-6 overflow-y-auto lg:overflow-visible">
-            {/* Top spacer for search bar */}
-            <div className="h-16 shrink-0" />
+          {/* Left Wing HUD: AQI & Health Risk Analysis */}
+          <div className="fixed top-20 left-4 sm:left-6 z-20 w-[320px] sm:w-[330px] space-y-2.5 pointer-events-none max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden scrollbar-none flex flex-col items-start pb-4">
+            {aqi && <AQIPanel data={aqi} />}
+            {riskAssessment && <RiskPanel data={riskAssessment} />}
+          </div>
 
-            {/* Main Side Wings around Central Earth */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start w-full my-auto">
-              {/* Left Column: AQI Panel & Risk Panel */}
-              <div className="lg:col-span-3 space-y-3.5 flex flex-col items-center lg:items-start">
-                {aqi && <AQIPanel data={aqi} />}
-                {riskAssessment && <RiskPanel data={riskAssessment} />}
-              </div>
-
-              {/* Middle Spacer: Leaves 3D Earth Globe and City Marker completely clear in the center */}
-              <div className="hidden lg:block lg:col-span-5 h-full pointer-events-none" />
-
-              {/* Right Column: Weather Panel & AI Advisory */}
-              <div className="lg:col-span-4 space-y-3.5 flex flex-col items-center lg:items-end">
-                {weather && <WeatherPanel data={weather} />}
-                {advisory && <AIAdvisoryPanel data={advisory} />}
-              </div>
-            </div>
-
-            {/* Bottom spacer for docked History Drawer */}
-            <div className="h-16 shrink-0" />
+          {/* Right Wing HUD: Atmospheric Weather & AI Health Advisory */}
+          <div className="fixed top-20 right-4 sm:right-6 z-20 w-[320px] sm:w-[340px] space-y-2.5 pointer-events-none max-h-[calc(100vh-96px)] overflow-y-auto overflow-x-hidden scrollbar-none flex flex-col items-end pb-4">
+            {weather && <WeatherPanel data={weather} />}
+            {advisory && <AIAdvisoryPanel data={advisory} />}
           </div>
 
           {/* Docked Floating 7-Day History & Trends Panel at Bottom Center (Expands Upward) */}
