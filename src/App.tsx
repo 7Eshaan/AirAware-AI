@@ -165,15 +165,31 @@ export function App() {
         />
       )}
 
-      {/* 2. Top Header Bar: Location Search + Health Profile - Unified Responsive Layout */}
+      {/* 2. Top Header Controls */}
       {showUI && (
-        <header className="fixed top-3 sm:top-5 inset-x-0 z-30 px-3 sm:px-6 pointer-events-none">
-          <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-4 pointer-events-auto">
-            {/* Desktop spacer to balance profile button and keep search centered */}
-            <div className="hidden lg:block w-36 shrink-0" />
+        <>
+          {/* Mobile Header (< 768px): Unified flex row across top */}
+          <header className="fixed top-3 inset-x-2.5 z-30 flex md:hidden items-center gap-2 pointer-events-none">
+            <div className="flex-1 min-w-0 pointer-events-auto">
+              <LocationSearch
+                onSelectLocation={handleSelectLocation}
+                selectedLocationName={selectedLocation?.name}
+                onRandomLocation={handleSelectRandomLocation}
+                isFlying={isFlying}
+              />
+            </div>
+            <div className="shrink-0 pointer-events-auto">
+              <ProfileButton
+                profile={profile}
+                onClick={() => setIsProfileModalOpen(true)}
+              />
+            </div>
+          </header>
 
-            {/* Centered Location Search Bar */}
-            <div className="flex-1 min-w-0 max-w-xl">
+          {/* Desktop Header (>= 768px): Centered Search Bar + Top-Right Profile Button */}
+          <div className="hidden md:block pointer-events-none">
+            {/* Dead-centered search bar in viewport */}
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30 w-[90vw] max-w-lg lg:max-w-xl pointer-events-auto">
               <LocationSearch
                 onSelectLocation={handleSelectLocation}
                 selectedLocationName={selectedLocation?.name}
@@ -182,15 +198,15 @@ export function App() {
               />
             </div>
 
-            {/* Profile Avatar Button */}
-            <div className="shrink-0">
+            {/* Top-Right Profile button - aligned precisely with the right-wing HUD panel at right-4 sm:right-6 */}
+            <div className="fixed top-6 right-4 sm:right-6 z-30 pointer-events-auto">
               <ProfileButton
                 profile={profile}
                 onClick={() => setIsProfileModalOpen(true)}
               />
             </div>
           </div>
-        </header>
+        </>
       )}
 
       {/* Initial Space Ambient Hint (visible only when UI is revealed and no location is selected) */}
@@ -240,15 +256,6 @@ export function App() {
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   <span>Exit Destination View</span>
-                </button>
-                <button
-                  onClick={handleSelectRandomLocation}
-                  disabled={isFlying}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-semibold backdrop-blur-md transition-all shadow-xl flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                  title="Explore another random city"
-                >
-                  <Shuffle className="h-3.5 w-3.5" />
-                  <span>Random City</span>
                 </button>
               </motion.div>
             )}
@@ -438,16 +445,6 @@ export function App() {
                   aria-label="Exit destination"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
-                </button>
-
-                <button
-                  onClick={handleSelectRandomLocation}
-                  disabled={isFlying}
-                  className="p-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white border border-emerald-500/30 transition-colors cursor-pointer disabled:opacity-50"
-                  title="Explore another city"
-                  aria-label="Random city"
-                >
-                  <Shuffle className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>

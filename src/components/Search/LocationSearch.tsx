@@ -147,7 +147,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
           }}
           disabled={isFlying}
           placeholder="Search city or country..."
-          className="w-full pl-9 sm:pl-11 pr-20 sm:pr-36 py-2 sm:py-3 text-xs sm:text-sm bg-slate-950/80 hover:bg-slate-900/90 focus:bg-slate-900 text-white placeholder-slate-400 rounded-2xl border border-white/15 focus:border-emerald-500/80 focus:ring-4 focus:ring-emerald-500/20 backdrop-blur-xl shadow-2xl transition-all duration-200 outline-none"
+          className="w-full h-10 sm:h-12 pl-9 sm:pl-11 pr-22 sm:pr-56 py-0 text-xs sm:text-sm bg-slate-950/80 hover:bg-slate-900/90 focus:bg-slate-900 text-white placeholder-slate-400 rounded-2xl border border-white/15 focus:border-emerald-500/80 focus:ring-4 focus:ring-emerald-500/20 backdrop-blur-xl shadow-2xl transition-all duration-200 outline-none flex items-center"
         />
 
         <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2.5 flex items-center gap-1 sm:gap-1.5">
@@ -189,10 +189,11 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
                 onRandomLocation();
               }}
               disabled={isFlying}
-              className="p-1.5 text-emerald-400 hover:text-emerald-300 cursor-pointer rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all group/btn disabled:opacity-50 shrink-0"
-              title="Explore random location"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-emerald-400 hover:text-emerald-300 cursor-pointer rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all group/btn disabled:opacity-50 shrink-0 text-xs font-semibold"
+              title="Explore random city"
             >
               <Shuffle className="h-3.5 w-3.5 group-hover/btn:rotate-45 transition-transform" />
+              <span className="hidden sm:inline">Random City</span>
             </button>
           )}
         </div>
