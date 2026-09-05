@@ -7,7 +7,6 @@ import { Atmosphere } from './Atmosphere';
 import { LocationMarker } from './LocationMarker';
 import { GlobeControls } from './GlobeControls';
 import { SpaceBackground } from './SpaceBackground';
-import { GlobeLoader } from './GlobeLoader';
 import { flyCameraToLocation } from '../../utils/cameraFlight';
 import gsap from 'gsap';
 
@@ -32,6 +31,7 @@ interface GlobeSceneProps {
   showMarker: boolean;
   onMarkerReveal: () => void;
   onFlightComplete: () => void;
+  onGlobeReady?: () => void;
 }
 
 // Inner scene wrapper to access useThree camera
@@ -41,6 +41,7 @@ interface SceneContentProps {
   showMarker: boolean;
   onControlsReady: (controls: OrbitControlsImpl) => void;
   earthGroupRef: React.RefObject<THREE.Group | null>;
+  onEarthLoaded?: () => void;
 }
 
 const SceneContent: React.FC<SceneContentProps> = ({
@@ -49,6 +50,7 @@ const SceneContent: React.FC<SceneContentProps> = ({
   showMarker,
   onControlsReady,
   earthGroupRef,
+  onEarthLoaded,
 }) => {
   return (
     <>
@@ -63,7 +65,7 @@ const SceneContent: React.FC<SceneContentProps> = ({
 
       {/* Rotating Earth Group */}
       <group ref={earthGroupRef}>
-        <Earth />
+        <Earth onLoaded={onEarthLoaded} />
         <Atmosphere />
 
         {/* 3D Location Marker on Earth's surface */}
@@ -90,7 +92,17 @@ const SceneContent: React.FC<SceneContentProps> = ({
 };
 
 export const GlobeScene = forwardRef<GlobeSceneHandle, GlobeSceneProps>(
-  ({ selectedLocation, isFlying, showMarker, onMarkerReveal, onFlightComplete }, ref) => {
+  (
+    {
+      selectedLocation,
+      isFlying,
+      showMarker,
+      onMarkerReveal,
+      onFlightComplete,
+      onGlobeReady,
+    },
+    ref
+  ) => {
     const controlsRef = useRef<OrbitControlsImpl | null>(null);
     const cameraRef = useRef<THREE.Camera | null>(null);
     const earthGroupRef = useRef<THREE.Group | null>(null);
@@ -207,11 +219,9 @@ export const GlobeScene = forwardRef<GlobeSceneHandle, GlobeSceneProps>(
             showMarker={showMarker}
             onControlsReady={handleControlsReady}
             earthGroupRef={earthGroupRef}
+            onEarthLoaded={onGlobeReady}
           />
         </Canvas>
-
-        {/* Mesmerising Celestial Planetary Loading Overlay */}
-        <GlobeLoader />
       </div>
     );
   }

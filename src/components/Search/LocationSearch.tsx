@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Search, MapPin, Loader2, X, Sparkles, Shuffle } from 'lucide-react';
 import { LocationResult, searchLocations, formatCoordinates, FALLBACK_CITIES } from '../../services/geocodingService';
 
@@ -118,9 +119,12 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
   };
 
   return (
-    <div
+    <motion.div
       ref={containerRef}
-      className="fixed top-6 left-1/2 transform -translate-x-1/2 z-30 w-[90vw] max-w-lg"
+      initial={{ opacity: 0, y: -24, x: '-50%' }}
+      animate={{ opacity: 1, y: 0, x: '-50%' }}
+      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed top-6 left-1/2 z-30 w-[90vw] max-w-lg"
     >
       <form onSubmit={handleSubmit} className="relative group">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-emerald-400">
@@ -264,7 +268,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

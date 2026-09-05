@@ -1,8 +1,7 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { EARTH_RADIUS, EARTH_SEGMENTS } from '../../utils/latLngToVector3';
-import { createProceduralEarthTexture } from '../../utils/textureFallback';
 
 // GLB model scale: GLB radius is 500 units, target radius is 1.5 units
 const GLB_SCALE = 1.5 / 500; // 0.003
@@ -11,10 +10,13 @@ const GLB_ROTATION: [number, number, number] = [0, -Math.PI / 2, 0];
 
 interface EarthProps {
   customTexture?: THREE.Texture | null;
+  onLoaded?: () => void;
 }
 
-const EarthGLB: React.FC = () => {
+const EarthGLB: React.FC<{ onLoaded?: () => void }> = ({ onLoaded }) => {
   const { scene } = useGLTF('/models/Earth_1_12756.glb');
+  const frameCount = useRef(0);
+  const notifiedRef = useRef(false);
 
   useEffect(() => {
     scene.traverse((child) => {
@@ -25,6 +27,18 @@ const EarthGLB: React.FC = () => {
     });
   }, [scene]);
 
+  // Wait until WebGL has rendered multiple frames with the real GLB model
+  useFrame(() => {
+    if (!notifiedRef.current) {
+      frameCount.current += 1;
+      // After at least 4 frames of actual GPU WebGL rendering
+      if (frameCount.current >= 4) {
+        notifiedRef.current = true;
+        onLoaded?.();
+      }
+    }
+  });
+
   return (
     <primitive
       object={scene}
@@ -34,25 +48,10 @@ const EarthGLB: React.FC = () => {
   );
 };
 
-const EarthProcedural: React.FC = () => {
-  const earthTexture = React.useMemo(() => createProceduralEarthTexture(), []);
-
+export const Earth: React.FC<EarthProps> = ({ onLoaded }) => {
   return (
-    <mesh castShadow receiveShadow>
-      <sphereGeometry args={[EARTH_RADIUS, EARTH_SEGMENTS, EARTH_SEGMENTS]} />
-      <meshStandardMaterial
-        map={earthTexture}
-        roughness={0.8}
-        metalness={0.0}
-      />
-    </mesh>
-  );
-};
-
-export const Earth: React.FC<EarthProps> = () => {
-  return (
-    <Suspense fallback={<EarthProcedural />}>
-      <EarthGLB />
+    <Suspense fallback={null}>
+      <EarthGLB onLoaded={onLoaded} />
     </Suspense>
   );
 };
