@@ -109,9 +109,10 @@ export const GlobeLoader: React.FC<GlobeLoaderProps> = ({
           <div className="absolute w-[450px] h-[450px] rounded-full bg-cyan-500/12 blur-[120px] pointer-events-none -bottom-20 -right-20" />
 
           {/* Minimal Observatory Brand Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-mono tracking-[0.28em] uppercase mb-10 shadow-inner">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping" />
-            <span>AirAware // Orbital Biosphere Observatory</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[9px] sm:text-[10px] font-mono tracking-[0.14em] sm:tracking-[0.28em] uppercase mb-8 sm:mb-10 shadow-inner max-w-[90vw] truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping shrink-0" />
+            <span className="hidden sm:inline">AirAware // Orbital Biosphere Observatory</span>
+            <span className="sm:hidden">AirAware // Biosphere Observatory</span>
           </div>
 
           {/* Centered Ball with Fast Spinning Luminous Trail */}
@@ -199,9 +200,9 @@ export const GlobeLoader: React.FC<GlobeLoaderProps> = ({
             </div>
 
             {/* Structured Multi-Phase Telemetry Indicator */}
-            <div className="mt-3 flex items-center gap-2 text-[11px] font-mono tracking-wider">
-              <span className="text-emerald-400 font-bold">{getPhaseCode(displayProgress)}</span>
-              <span className="text-slate-300 transition-colors duration-300">
+            <div className="mt-3 flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tracking-wide sm:tracking-wider max-w-[90vw] px-2 truncate">
+              <span className="text-emerald-400 font-bold shrink-0">{getPhaseCode(displayProgress)}</span>
+              <span className="text-slate-300 transition-colors duration-300 truncate">
                 {getPhaseLabel(displayProgress, isGlobeReady)}
               </span>
             </div>

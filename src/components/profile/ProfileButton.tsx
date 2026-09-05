@@ -13,11 +13,11 @@ export const ProfileButton: React.FC<ProfileButtonProps> = ({ profile, onClick }
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: -18, scale: 0.96 }}
+      initial={{ opacity: 0, y: -16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
       onClick={onClick}
-      className="fixed top-6 right-6 z-30 flex items-center gap-2.5 p-2.5 sm:px-3.5 sm:py-2 rounded-2xl bg-slate-950/70 hover:bg-slate-900/90 text-white border border-white/15 backdrop-blur-xl shadow-2xl transition-all duration-200 cursor-pointer group hover:scale-105"
+      className="relative flex items-center gap-2.5 p-1.5 sm:px-3.5 sm:py-2 rounded-2xl bg-slate-950/80 hover:bg-slate-900 text-white border border-white/15 backdrop-blur-xl shadow-2xl transition-all duration-200 cursor-pointer group hover:scale-105 shrink-0"
       aria-label="Open Health Profile"
       title="Personal Health Profile & Exposure Settings"
     >

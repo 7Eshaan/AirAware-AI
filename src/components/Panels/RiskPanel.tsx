@@ -14,7 +14,7 @@ export const RiskPanel: React.FC<RiskPanelProps> = ({ data }) => {
       initial={{ opacity: 0, y: 16, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full max-w-[330px] shrink-0 p-3.5 rounded-2xl bg-slate-950/75 border border-white/10 backdrop-blur-xl shadow-2xl text-white pointer-events-auto"
+      className="w-full md:max-w-[330px] shrink-0 p-3.5 rounded-2xl bg-slate-950/75 border border-white/10 backdrop-blur-xl shadow-2xl text-white pointer-events-auto"
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2 mb-2">

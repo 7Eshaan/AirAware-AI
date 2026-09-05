@@ -121,13 +121,13 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
   return (
     <motion.div
       ref={containerRef}
-      initial={{ opacity: 0, y: -24, x: '-50%' }}
-      animate={{ opacity: 1, y: 0, x: '-50%' }}
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-6 left-1/2 z-30 w-[90vw] max-w-lg"
+      className="relative w-full"
     >
       <form onSubmit={handleSubmit} className="relative group">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-emerald-400">
+        <div className="absolute inset-y-0 left-0 pl-3.5 sm:pl-4 flex items-center pointer-events-none text-emerald-400">
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
           ) : (
@@ -146,11 +146,11 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
             }
           }}
           disabled={isFlying}
-          placeholder="Search any city or country..."
-          className="w-full pl-11 pr-36 py-3 text-sm bg-slate-950/80 hover:bg-slate-900/90 focus:bg-slate-900 text-white placeholder-slate-400 rounded-2xl border border-white/15 focus:border-emerald-500/80 focus:ring-4 focus:ring-emerald-500/20 backdrop-blur-xl shadow-2xl transition-all duration-200 outline-none"
+          placeholder="Search city or country..."
+          className="w-full pl-9 sm:pl-11 pr-20 sm:pr-36 py-2 sm:py-3 text-xs sm:text-sm bg-slate-950/80 hover:bg-slate-900/90 focus:bg-slate-900 text-white placeholder-slate-400 rounded-2xl border border-white/15 focus:border-emerald-500/80 focus:ring-4 focus:ring-emerald-500/20 backdrop-blur-xl shadow-2xl transition-all duration-200 outline-none"
         />
 
-        <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center gap-1.5">
+        <div className="absolute inset-y-0 right-0 pr-1.5 sm:pr-2.5 flex items-center gap-1 sm:gap-1.5">
           {query && (
             <button
               type="button"
@@ -169,7 +169,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
           <button
             type="submit"
             disabled={isFlying || !query.trim()}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-40 disabled:hover:bg-emerald-500 text-slate-950 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-sm shadow-emerald-500/25 shrink-0"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-40 disabled:hover:bg-emerald-500 text-slate-950 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-sm shadow-emerald-500/25 shrink-0"
             title="Search this location (Enter)"
           >
             {isLoading ? (
@@ -215,7 +215,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
                       <div className="font-semibold text-sm truncate text-white">
                         {loc.name}
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-2">
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-2 hidden sm:inline">
                         {formatCoordinates(loc.latitude, loc.longitude)}
                       </span>
                     </div>

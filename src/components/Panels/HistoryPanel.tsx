@@ -22,10 +22,11 @@ import { fetchUserAdvisoryHistory, deleteAdvisoryHistoryRecord, AdvisoryHistoryR
 
 interface HistoryPanelProps {
   data: SevenDayTrendsData;
+  defaultExpanded?: boolean;
 }
 
-export const HistoryPanel: React.FC<HistoryPanelProps> = ({ data }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+export const HistoryPanel: React.FC<HistoryPanelProps> = ({ data, defaultExpanded = false }) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [viewMode, setViewMode] = useState<'trends' | 'advisories'>('trends');
   const [timeframe, setTimeframe] = useState<'history' | 'forecast'>('history');
   const [activeTab, setActiveTab] = useState<'aqi' | 'temp' | 'risk'>('aqi');
@@ -87,9 +88,10 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ data }) => {
           </div>
           <div>
             <div className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <span>Environmental Telemetry & History</span>
+              <span className="hidden sm:inline">Environmental Telemetry & History</span>
+              <span className="sm:hidden">Telemetry & History</span>
               <span className="text-[10px] font-normal text-slate-400">
-                ({isExpanded ? 'Click to collapse' : 'Click to expand'})
+                ({isExpanded ? 'Collapse' : 'Expand'})
               </span>
             </div>
             <div className="text-[10px] text-slate-400">
@@ -119,26 +121,28 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ data }) => {
                 <button
                   type="button"
                   onClick={() => setViewMode('trends')}
-                  className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                     viewMode === 'trends'
                       ? 'bg-blue-600 text-white font-bold shadow'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <BarChart3 className="h-3 w-3" />
-                  <span>Telemetry Trends</span>
+                  <span className="hidden sm:inline">Telemetry Trends</span>
+                  <span className="sm:hidden">Trends</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSelectAdvisories}
-                  className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                     viewMode === 'advisories'
                       ? 'bg-emerald-600 text-white font-bold shadow'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <FileText className="h-3 w-3" />
-                  <span>Advisory Archive</span>
+                  <span className="hidden sm:inline">Advisory Archive</span>
+                  <span className="sm:hidden">Archive</span>
                   {advisoryHistory.length > 0 && (
                     <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
                       {advisoryHistory.length}
@@ -160,25 +164,27 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ data }) => {
                   <div className="flex items-center p-0.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs">
                     <button
                       onClick={() => setTimeframe('history')}
-                      className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-2 sm:px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                         timeframe === 'history'
                           ? 'bg-blue-600 text-white font-bold shadow'
                           : 'text-slate-400 hover:text-white'
                       }`}
                     >
                       <History className="h-3 w-3" />
-                      <span>Past 7 Days (Observed)</span>
+                      <span className="hidden sm:inline">Past 7 Days (Observed)</span>
+                      <span className="sm:hidden">Past 7d</span>
                     </button>
                     <button
                       onClick={() => setTimeframe('forecast')}
-                      className={`px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-2 sm:px-3 py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                         timeframe === 'forecast'
                           ? 'bg-emerald-600 text-white font-bold shadow'
                           : 'text-slate-400 hover:text-white'
                       }`}
                     >
                       <ArrowRight className="h-3 w-3" />
-                      <span>Next 7 Days (Forecast)</span>
+                      <span className="hidden sm:inline">Next 7 Days (Forecast)</span>
+                      <span className="sm:hidden">Next 7d</span>
                     </button>
                   </div>
 

@@ -177,13 +177,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-[640px] max-h-[92vh] overflow-y-auto bg-[#1C1C1E]/95 text-white border border-white/10 rounded-[32px] p-6 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text','Helvetica_Neue',sans-serif]"
+            className="relative w-full max-w-[640px] max-h-[92vh] overflow-y-auto bg-[#1C1C1E]/95 text-white border border-white/10 rounded-2xl sm:rounded-[32px] p-4 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text','Helvetica_Neue',sans-serif]"
             style={{ isolation: 'isolate' }}
           >
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer z-20"
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer z-20"
               aria-label="Close modal"
             >
               <X className="h-4 w-4" />
